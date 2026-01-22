@@ -14,14 +14,11 @@ const LOCAL_STORAGE_RATINGS_KEY = 'gallery-impossible-ratings-v2';
 interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; }
 
-// Use React.Component to ensure props are correctly typed for the class instance and recognized by the compiler
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Use the named Component import and remove the unnecessary constructor 
+// to ensure the class correctly inherits 'props' and 'state' in all environments.
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = { hasError: false };
 
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-  }
-  
   static getDerivedStateFromError(_: Error): ErrorBoundaryState {
     return { hasError: true };
   }
@@ -48,7 +45,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Access children from this.props which is inherited from React.Component
+    // Correctly accessing props.children inherited from Component
     return this.props.children || null;
   }
 }

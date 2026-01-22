@@ -1,8 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, Quote, Feather, Share2, Sparkles, ThumbsUp, ThumbsDown, Image as ImageIcon, Loader2, Palette, Type, Landmark, ExternalLink, Wand2, Info, Link as LinkIcon, Send } from 'lucide-react';
-import { generateImage } from '../services/geminiService';
+import { Copy, Check, Quote, Feather, Share2, ThumbsUp, ThumbsDown, Type, Check as CheckIcon, Send } from 'lucide-react';
 
 interface StoryDisplayProps {
   story: string;
@@ -12,41 +11,14 @@ interface StoryDisplayProps {
 }
 
 type TextStyle = 'classic' | 'modern' | 'antique' | 'minimal';
-type SurrealStyle = 'Dreamscape' | 'Abstract Surrealism' | 'Biomechanical Surrealism' | 'Pop Surrealism' | 'Gothic Surrealism' | 'Classic Surrealism';
-
-const SURREALIST_ARTISTS = [
-  'Salvador Dalí', 'René Magritte', 'Max Ernst', 'Leonora Carrington', 
-  'Joan Miró', 'Yves Tanguy', 'Remedios Varo', 'Giorgio de Chirico',
-  'Kay Sage', 'Dorothea Tanning', 'Man Ray', 'Frida Kahlo', 'Leonor Fini'
-];
-
-const SURREAL_STYLES: SurrealStyle[] = [
-  'Dreamscape', 
-  'Abstract Surrealism', 
-  'Biomechanical Surrealism', 
-  'Pop Surrealism', 
-  'Gothic Surrealism',
-  'Classic Surrealism'
-];
 
 const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, onRate }) => {
   const [copied, setCopied] = useState(false);
   const [shareStatus, setShareStatus] = useState<'idle' | 'shared' | 'copied' | 'failed'>('idle');
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [activeArtist, setActiveArtist] = useState<string | null>(null);
-  const [isImageLoading, setIsImageLoading] = useState(false);
   const [textStyle, setTextStyle] = useState<TextStyle>('classic');
-  const [selectedSurrealStyle, setSelectedSurrealStyle] = useState<SurrealStyle>('Dreamscape');
   
-  // Easter egg states
-  const [illustrateClicks, setIllustrateClicks] = useState(0);
-  const [isEasterEggActive, setIsEasterEggActive] = useState(false);
-
   // Clear states when a new story is loaded
   useEffect(() => {
-    setImageUrl(null);
-    setActiveArtist(null);
-    setIllustrateClicks(0);
     setShareStatus('idle');
     setCopied(false);
   }, [story]);
@@ -55,33 +27,6 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
     navigator.clipboard.writeText(story);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleIllustrate = async () => {
-    // Increment Easter egg counter
-    const newCount = illustrateClicks + 1;
-    setIllustrateClicks(newCount);
-    
-    if (newCount === 5) {
-      setIsEasterEggActive(true);
-      setTimeout(() => setIsEasterEggActive(false), 6000);
-      setIllustrateClicks(0); // Reset after trigger
-    }
-
-    if (isImageLoading || !!imageUrl || !story) return;
-    setIsImageLoading(true);
-    
-    const randomArtist = SURREALIST_ARTISTS[Math.floor(Math.random() * SURREALIST_ARTISTS.length)];
-    
-    try {
-      const url = await generateImage(story, randomArtist, selectedSurrealStyle);
-      setImageUrl(url);
-      setActiveArtist(randomArtist);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsImageLoading(false);
-    }
   };
 
   const handleShare = async () => {
@@ -93,7 +38,6 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
       url: shareUrl,
     };
 
-    // Attempt to use native sharing if supported
     if (navigator.share && typeof navigator.canShare === 'function' && navigator.canShare(shareData)) {
       try {
         await navigator.share(shareData);
@@ -106,7 +50,6 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
         }
       }
     } else {
-      // Manual fallback: Clipboard copy with prominent messaging
       copyFallback(shareText, shareUrl);
     }
   };
@@ -115,7 +58,7 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
     const fullCopyText = `${text}\n\nExplore the Library: ${url}`;
     navigator.clipboard.writeText(fullCopyText).then(() => {
       setShareStatus('copied');
-      setTimeout(() => setShareStatus('idle'), 7000); // Prominent duration
+      setTimeout(() => setShareStatus('idle'), 7000); 
     }).catch(err => {
       console.error('Clipboard fallback failed:', err);
       setShareStatus('failed');
@@ -128,13 +71,6 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
     const currentIndex = styles.indexOf(textStyle);
     const nextIndex = (currentIndex + 1) % styles.length;
     setTextStyle(styles[nextIndex]);
-  };
-
-  const cycleSurrealStyle = () => {
-    const currentIndex = SURREAL_STYLES.indexOf(selectedSurrealStyle);
-    const nextIndex = (currentIndex + 1) % SURREAL_STYLES.length;
-    setSelectedSurrealStyle(SURREAL_STYLES[nextIndex]);
-    setImageUrl(null);
   };
 
   const getStyleClasses = () => {
@@ -181,26 +117,6 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
         )}
       </AnimatePresence>
 
-      {/* Easter Egg Overlay */}
-      <AnimatePresence>
-        {isEasterEggActive && (
-          <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden">
-            {[...Array(24)].map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ x: Math.random() * window.innerWidth, y: window.innerHeight + 100, opacity: 0, rotate: 0, scale: 0.5 }}
-                animate={{ y: -200, opacity: [0, 0.8, 0], rotate: 360 * (Math.random() > 0.5 ? 1 : -1), scale: [0.5, 1.2, 0.8] }}
-                transition={{ duration: 4 + Math.random() * 4, delay: i * 0.15, ease: "easeOut" }}
-                className="absolute text-[#b2935b]/30"
-              >
-                {i % 3 === 0 ? <Sparkles size={24 + Math.random() * 20} /> : i % 3 === 1 ? <Feather size={20 + Math.random() * 15} /> : <Landmark size={18 + Math.random() * 10} />}
-              </motion.div>
-            ))}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#b2935b]/5 backdrop-blur-[1px]" />
-          </div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center gap-6 py-20">
@@ -216,23 +132,6 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
         ) : (
           <motion.div key={story} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }} className="max-w-5xl w-full flex flex-col items-center">
             
-            <AnimatePresence>
-              {imageUrl && (
-                <motion.div initial={{ opacity: 0, scale: 0.95, filter: 'blur(20px)' }} animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }} transition={{ duration: 1.8, ease: [0.16, 1, 0.3, 1] }} className="mb-12 flex flex-col items-center">
-                  <div className="relative group">
-                    <div className="absolute -inset-4 border border-black/[0.03] rounded shadow-sm pointer-events-none"></div>
-                    <img src={imageUrl} alt="Story illustration" className="w-64 h-64 md:w-80 md:h-80 object-cover rounded shadow-2xl sepia-[0.2] transition-all hover:sepia-0" />
-                  </div>
-                  {activeArtist && (
-                    <div className="mt-6 flex flex-col items-center gap-1">
-                      <p className="font-serif italic text-[11px] md:text-xs tracking-wider text-black text-center opacity-40">In the style of {activeArtist}</p>
-                      <p className="font-sans font-bold uppercase text-[8px] tracking-[0.3em] text-black opacity-25">{selectedSurrealStyle}</p>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             <div className="mb-6 md:mb-10 opacity-[0.05] scale-125 md:scale-150"><Quote size={40} /></div>
 
             <motion.div className="relative group mb-12 md:mb-16 px-4 md:px-10" whileHover={{ scale: 1.002 }} transition={{ duration: 0.6 }}>
@@ -262,23 +161,17 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ story, isLoading, rating, o
 
                 <div className="flex items-center gap-3">
                   <motion.button whileTap={{ scale: 0.9 }} onClick={cycleTextStyle} className="btn-plaque p-3 rounded-full text-black/30 hover:text-black" title="Typography"><Type size={16} /></motion.button>
-                  <div className="flex items-center gap-1 group/style">
-                    <motion.button whileTap={{ scale: 0.9 }} onClick={cycleSurrealStyle} className="btn-plaque p-3 rounded-full text-black/30 hover:text-black" title="Style"><Wand2 size={16} /></motion.button>
-                    <motion.button whileTap={{ scale: 0.9 }} onClick={handleIllustrate} className={`btn-plaque p-3 rounded-full transition-all ${imageUrl ? 'text-[#b2935b] border-[#b2935b]' : 'text-black/30 hover:text-black'} ${isImageLoading ? 'cursor-wait' : ''}`} title="Visualize">
-                      {isImageLoading ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
-                    </motion.button>
-                  </div>
-                  <motion.button whileTap={{ scale: 0.9 }} onClick={handleCopy} className="btn-plaque p-3 rounded-full text-black/30 hover:text-black" title="Archive">{copied ? <Check size={16} className="text-green-700" /> : <Copy size={16} />}</motion.button>
+                  <motion.button whileTap={{ scale: 0.9 }} onClick={handleCopy} className="btn-plaque p-3 rounded-full text-black/30 hover:text-black" title="Archive">{copied ? <CheckIcon size={16} className="text-green-700" /> : <Copy size={16} />}</motion.button>
                   <motion.button whileTap={{ scale: 0.9 }} onClick={handleShare} className={`btn-plaque p-3 rounded-full transition-all ${shareStatus !== 'idle' ? 'text-[#b2935b] border-[#b2935b]' : 'text-black/30 hover:text-black'}`} title="Expose">
-                    {shareStatus === 'idle' ? <Share2 size={16} /> : <Check size={16} className={shareStatus === 'failed' ? 'text-red-400' : 'text-green-700'} />}
+                    {shareStatus === 'idle' ? <Share2 size={16} /> : <CheckIcon size={16} className={shareStatus === 'failed' ? 'text-red-400' : 'text-green-700'} />}
                   </motion.button>
                 </div>
               </div>
               <AnimatePresence>
-                {(isImageLoading || isEasterEggActive || shareStatus !== 'idle' || !!selectedSurrealStyle) && (
+                {shareStatus !== 'idle' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col items-center gap-1 mt-2">
                     <p className="text-[8px] uppercase tracking-[0.3em] text-[#b2935b] font-medium">
-                      {isEasterEggActive ? "Reality Constraint Breached..." : isImageLoading ? "Painting a Dream in Vibrant Hues..." : shareStatus === 'copied' ? "Dissemination Channel: Clipboard Manual" : shareStatus === 'shared' ? "Fragment Disseminated Successfully" : !imageUrl ? `Mode: ${selectedSurrealStyle}` : ""}
+                      {shareStatus === 'copied' ? "Dissemination Channel: Clipboard Manual" : shareStatus === 'shared' ? "Fragment Disseminated Successfully" : ""}
                     </p>
                   </motion.div>
                 )}
