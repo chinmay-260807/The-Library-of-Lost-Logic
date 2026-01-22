@@ -11,12 +11,11 @@ const LOCAL_STORAGE_KEY = 'gallery-impossible-vault-v2';
 const LOCAL_STORAGE_RATINGS_KEY = 'gallery-impossible-ratings-v2';
 
 // --- Error Boundary Component ---
-// Added optional children to fix "missing children" error and used explicit state definition for TypeScript compatibility.
 interface ErrorBoundaryProps { children?: ReactNode; }
 interface ErrorBoundaryState { hasError: boolean; }
 
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Explicitly define state property to resolve TypeScript "property does not exist" errors.
+// Use React.Component to ensure props are correctly typed for the class instance and recognized by the compiler
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = { hasError: false };
 
   constructor(props: ErrorBoundaryProps) {
@@ -28,13 +27,13 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
   
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error:", error, errorInfo);
+    console.error("Critical Runtime Error:", error, errorInfo);
   }
   
   render() {
     if (this.state.hasError) {
       return (
-        <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#fdfcf9] p-10 text-center">
+        <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#fdfcf9] p-10 text-center relative z-[999]">
           <AlertTriangle size={48} className="text-red-800/20 mb-6" />
           <h1 className="font-serif italic text-3xl mb-4 text-black/80">Catastrophic Logic Failure</h1>
           <p className="max-w-md text-sm text-black/40 uppercase tracking-widest leading-relaxed mb-8">
@@ -49,8 +48,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
-    // Accessing this.props.children is safe as it is part of React.Component
-    return this.props.children;
+    // Access children from this.props which is inherited from React.Component
+    return this.props.children || null;
   }
 }
 
@@ -63,6 +62,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<string[]>([]);
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
 
+  // Initial Story Loader
   useEffect(() => {
     const savedVault = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (savedVault) {
@@ -72,6 +72,8 @@ const App: React.FC = () => {
     if (savedRatings) {
       try { setRatings(JSON.parse(savedRatings)); } catch (e) { console.error(e); }
     }
+    
+    // Attempt initial boot
     handleGenerateStory();
   }, []);
 
@@ -128,19 +130,23 @@ const App: React.FC = () => {
         try {
           nextStory = await generateStory();
         } catch (error) {
-          console.warn("API Failure, using local archive:", error);
+          console.warn("API Failure (Check API_KEY in Vercel settings):", error);
           const randomIndex = Math.floor(Math.random() * FALLBACK_STORIES.length);
           nextStory = FALLBACK_STORIES[randomIndex];
         }
       }
 
+      // Avoid immediate duplicates
       if (nextStory === currentStory && (userStories.length + FALLBACK_STORIES.length > 1)) {
         handleGenerateStory();
         return;
       }
 
       setCurrentStory(nextStory);
-      setHistory(prev => [nextStory, ...prev].slice(0, 50));
+      setHistory(prev => {
+          if (prev.includes(nextStory)) return prev;
+          return [nextStory, ...prev].slice(0, 50);
+      });
     } catch (err) {
       setError("The logic engine failed to initialize.");
     } finally {

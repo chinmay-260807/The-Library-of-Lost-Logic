@@ -108,6 +108,17 @@
             background: var(--gold-light);
             color: white;
         }
+
+        /* Boot loader styles */
+        #boot-loader {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background-color: #fdfcf9;
+        }
     </style>
 <script type="importmap">
 {
@@ -125,6 +136,15 @@
 <body>
     <div class="paper-texture"></div>
     <div class="ambient-light"></div>
-    <div id="root" class="h-full w-full relative z-10"></div>
+    <div id="root" class="h-full w-full relative z-10">
+        <!-- Static Boot UI to prevent blank flash -->
+        <div id="boot-loader">
+            <div style="font-family: 'Cormorant Garamond', serif; font-style: italic; color: #b2935b; opacity: 0.5;">
+                <p style="letter-spacing: 0.6em; text-transform: uppercase; font-size: 11px; font-weight: 600;">Opening the Vault</p>
+            </div>
+        </div>
+    </div>
+    <!-- Crucial: Entry point for Vercel and browsers to start the React application -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
